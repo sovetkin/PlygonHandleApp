@@ -1,0 +1,212 @@
+﻿<Window x:Class="PlygonHandle.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:PlygonHandle.ViewModels"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:c="clr-namespace:PlygonHandle.Converters"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:local="clr-namespace:PlygonHandle"
+        mc:Ignorable="d"
+        Title="MainWindow" MinHeight="450" MinWidth="850">
+    <Window.DataContext>
+        <views:MainViewModel/>
+    </Window.DataContext>
+    <Window.Resources>
+        <c:NullToUnsetValueConverter x:Key="NullToUnsetValueConverter"/>
+        <c:RoundDoubleConverter x:Key="RoundDoubleConverter"/>
+
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="Validation.ErrorTemplate">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Right" Width="16" Height="16" VerticalAlignment="Center" Margin="3 0 0 0">
+                                <Ellipse Width="16" Height="16" Fill="Red"/>
+                                <Ellipse Width="3" Height="8" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0 2 0 0" Fill="White"/>
+                                <Ellipse Width="2" Height="2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0 0 0 2" Fill="White"/>
+                            </Grid>
+                            <Border BorderBrush="Red" BorderThickness="2" CornerRadius="2">
+                                <AdornedElementPlaceholder/>
+                            </Border>
+                        </DockPanel>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="true">
+                    <Setter Property="ToolTip" Value="{Binding RelativeSource={x:Static RelativeSource.Self}, Path=(Validation.Errors)[0].ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="120"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.5*"/>
+            <ColumnDefinition Width="0.5*"/>
+        </Grid.ColumnDefinitions>
+        <Label Content="Исходный вариант"
+               HorizontalAlignment="Center"
+               Grid.Row="0" Grid.Column="0"/>
+        <Canvas x:Name="maincanvas" Grid.Row="1" Grid.Column="0" Margin="10 0" Background="LightGray">
+            <Polygon Stroke="BlueViolet"  Points="{Binding FirstPolygonPoints, Converter={StaticResource NullToUnsetValueConverter}}"/>
+            <Polygon Stroke="Brown" Points="{Binding SecondPolygonPoints, Converter={StaticResource NullToUnsetValueConverter}}"/>
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="Loaded">
+                    <i:InvokeCommandAction Command="{Binding SetCanvasBoundaries}" CommandParameter="{Binding ElementName=maincanvas}"/>
+                </i:EventTrigger>
+                <i:EventTrigger EventName="SizeChanged">
+                    <i:InvokeCommandAction Command="{Binding SetCanvasBoundaries}" CommandParameter="{Binding ElementName=maincanvas}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </Canvas>
+        <Label Content="Результат операции"
+               HorizontalAlignment="Center"
+               Grid.Row="0" Grid.Column="1"/>
+        <Canvas Grid.Row="1" Grid.Column="1" Background="LightGray" Margin="10 0">
+            <Path Fill="LightPink" Stroke="LightBlue" x:Name="path">
+                <Path.Data>
+                    <CombinedGeometry x:Name="geometry">
+                        <CombinedGeometry.Geometry1>
+                            <PathGeometry>
+                                <PathFigure StartPoint="{Binding FirstStartPoint, Converter={StaticResource NullToUnsetValueConverter}}">
+                                    <PathFigure.Segments>
+                                        <PolyLineSegment Points="{Binding FirstPolygonRestPoints, Converter={StaticResource NullToUnsetValueConverter}}"/>
+                                    </PathFigure.Segments>
+                                </PathFigure>
+                            </PathGeometry>
+                        </CombinedGeometry.Geometry1>
+                        <CombinedGeometry.Geometry2>
+                            <PathGeometry>
+                                <PathFigure StartPoint="{Binding SecondStartPoint, Converter={StaticResource NullToUnsetValueConverter}}">
+                                    <PathFigure.Segments>
+                                        <PolyLineSegment Points="{Binding SecondPolygonRestPoints, Converter={StaticResource NullToUnsetValueConverter}}"/>
+                                    </PathFigure.Segments>
+                                </PathFigure>
+                            </PathGeometry>
+                        </CombinedGeometry.Geometry2>
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Changed">
+                                <i:InvokeCommandAction Command="{Binding NewPolygonRendered}" CommandParameter="{Binding ElementName=path}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </CombinedGeometry>
+                </Path.Data>
+            </Path>
+        </Canvas>
+        <StackPanel Grid.Row="2" Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Margin="10 0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                    <Label Content="Координаты 1-го многоугольника:"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+                         Text="{Binding ListFirstPolygonPoints, UpdateSourceTrigger=PropertyChanged, Delay=800, NotifyOnValidationError=True}"/>
+                    <Label Grid.Row="1" Grid.Column="1"
+                           Content="Формат: X1, Y1, X2, Y2, ... Xn, Yn" FontSize="10"
+                           Padding="0"
+                           Foreground="Gray"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="Координаты 2-го многоугольника:"/>
+                <TextBox VerticalAlignment="Center"
+                         Text="{Binding ListSecondPolygonPoints, UpdateSourceTrigger=PropertyChanged, Delay=800, NotifyOnValidationError=True}"
+                         Grid.Row="2" Grid.Column="1"/>
+                <Label Grid.Row="3" Grid.Column="1"
+                           Content="Формат: X1, Y1, X2, Y2, ... Xn, Yn" FontSize="10"
+                           Padding="0"
+                           Foreground="Gray"/>
+                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="DarkKhaki" FontStyle="Italic">
+                    <Run Text="Значения координат должны быть в пределах между 0, 0 "/>
+                    <Run Text="и "/>
+                    <Run>
+                        <Binding Path="ActualWidth"
+                                 ElementName="maincanvas"
+                                 Mode="OneWay"
+                                 Converter="{StaticResource RoundDoubleConverter}">
+                            <Binding.ConverterParameter>
+                                <sys:Int32>0</sys:Int32>
+                            </Binding.ConverterParameter>
+                        </Binding>
+                    </Run>
+                    <Run Text=", "/>
+                    <Run>
+                        <Binding Path="ActualHeight"
+                                 ElementName="maincanvas"
+                                 Mode="OneWay"
+                                 Converter="{StaticResource RoundDoubleConverter}">
+                            <Binding.ConverterParameter>
+                                <sys:Int32>0</sys:Int32>
+                            </Binding.ConverterParameter>
+                        </Binding>
+                    </Run>
+                </TextBlock>
+            </Grid>
+        </StackPanel>
+        <DockPanel Grid.Row="2" Grid.Column="1"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Stretch"
+                   Margin="10 0">
+            <GroupBox>
+                <GroupBox.Header>
+                    <Label Content="Вид операции"/>
+                </GroupBox.Header>
+                <StackPanel Margin="10 0 20 0">
+                    <RadioButton x:Name="radiobuttonUnion"
+                                 Content="Объединение"
+                                 GroupName="groupbox"
+                                 Margin="0 5" IsChecked="True">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Checked" SourceName="radiobuttonUnion">
+                                <i:ChangePropertyAction PropertyName="GeometryCombineMode" TargetObject="{Binding ElementName=geometry}" Value="Union"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </RadioButton>
+                    <RadioButton x:Name="radiobuttonIntersect"
+                                 Content="Пересечение"
+                                 GroupName="groupbox"
+                                 Margin="0 5"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Checked" SourceName="radiobuttonIntersect">
+                            <i:ChangePropertyAction PropertyName="GeometryCombineMode" TargetObject="{Binding ElementName=geometry}" Value="Intersect"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </StackPanel>
+            </GroupBox>
+            <TextBlock 
+                       Margin="40 0"
+                       VerticalAlignment="Center">
+                <Run Text="S: " FontSize="36" FontWeight="DemiBold"/>
+                <Run FontSize="24">
+                    <Binding Path="PolygonArea"
+                             Converter="{StaticResource RoundDoubleConverter}">
+                        <Binding.ConverterParameter>
+                            <sys:Int32>2</sys:Int32>
+                        </Binding.ConverterParameter>
+                    </Binding>
+                </Run>
+                <Run Text=" кв. ед." FontSize="14"/>
+            </TextBlock>
+            <Button Content="Выход"
+                    Margin="5"
+                    Padding="5"
+                    Command="{Binding ExitCommand}"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"/>
+        </DockPanel>
+    </Grid>
+</Window>
